@@ -5,6 +5,7 @@ import sortView from '@/views/sort.vue'
 import multiSortView from '@/views/multi-sort.vue'
 import filterView from '@/views/filter.vue'
 import sortAndFilterView from '@/views/sort-and-filter.vue'
+import groupHeaderView from '@/views/group-header.vue'
 import reencapsulateView from '@/views/reencapsulate.vue'
 
 // const currView = shallowRef(baseView)
@@ -16,7 +17,8 @@ const views = shallowRef([
   { no: 3, title: '多重排序', value: multiSortView },
   { no: 4, title: '筛选/过滤器', value: filterView },
   { no: 5, title: '排序&筛选', value: sortAndFilterView },
-  { no: 6, title: 'TableV2二次封装(排序&筛选&表项操作)', value: reencapsulateView }
+  { no: 6, title: '表头分组', value: groupHeaderView },
+  { no: 7, title: 'TableV2二次封装(排序&筛选&表项操作)', value: reencapsulateView }
 ])
 const currView = computed(() => views.value.find(v => v.no === currNo.value)?.value)
 
