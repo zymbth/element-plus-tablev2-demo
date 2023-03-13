@@ -55,14 +55,18 @@ const tempData = ref([])   // 中间变量，对源数据的筛选
 
 onMounted(() => {
   // 源数据更新 -> 更新筛选项各自的可筛选列表, 执行筛选
-  watch(originData, (newVal) => {
+  watch(originData, () => {
     getFiltersFromResp()
     onFilter('init')
   }, { immediate: true })
+  // 表格项显隐状态更新 -> 执行筛选
+  watch(colHiddens, () => {
+    onFilter()
+  })
   // 筛选状态更新 | tempData 更新 | cols' hidden 更新 -> 执行排序
   watch(
-    [sortState, tempData, colHiddens],
-    ([newState, newData, hiddens]) => {
+    [sortState, tempData],
+    ([newState, newData]) => {
       // handle sort ( originData --sort--> tableData )
       const { key, order } = newState ?? {}
       // 数据为空 | 当前无排序，重置 tableData
@@ -160,6 +164,7 @@ const columns = computed(() => {
   })
 })
 
+// 表格项显隐状态
 const colHiddens = computed(() => {
   return columnData.value.map(col => !!col.hidden)
 })
@@ -182,13 +187,18 @@ const onSort = ({ key, order }) => {
 
 /**
  * 筛选信息列表
- * props:
- * - {Array} list 可筛选值列表
- * - {Array} selected 已勾选列表（筛选值多选时使用）
- * - {string} singleSelect 已勾选值（筛选值单选时使用）
- * - {Function} [filterMethod] 筛选方法
- * - {Array} [filteredValue] 默认筛选值
- * - {boolean} [filterSingle] 筛选值单选？
+ * 
+ * @prop {Array} list 可筛选值列表
+ * @prop {Array} selected 已勾选列表（筛选值多选时使用）
+ * @prop {string} singleSelect 已勾选值（筛选值单选时使用）
+ * @prop {Function} [filterMethod] 筛选方法
+ * @prop {Array} [filteredValue] 默认筛选值
+ * @prop {boolean} [filterSingle] 筛选值单选？
+ * @example
+ * {
+ *   gender: { list: [], selected: [], singleSelect: undefined, filterSingle: true },
+ *   // ...
+ * }
  */
  const filterableCols = reactive(
   columnData.value
@@ -256,8 +266,9 @@ const compareFilters = currFilters => {
 // 筛选
 const onFilter = (flag) => {
   // console.log('on Filter')
-  const allFilters = Object.entries(filterableCols).filter(([_,configs]) => {
-    return configs.filterSingle
+  const allFilters = Object.entries(filterableCols).filter(([dataKey,configs]) => {
+    const currCol = columnData.value.find(c => c.dataKey === dataKey)
+    return currCol && !currCol.hidden && configs.filterSingle
       ? ![null,undefined].includes(configs.singleSelect)
       : configs.selected?.length > 0
   })
