@@ -1,8 +1,12 @@
 Element Plus 虚拟化表格组件的使用
 
-# 一、Element Plus 表格基础
+# 前言
 
-`element-plus@2.2.0` 后提供虚拟化表格组件，解决表格数据过大导致的卡顿等性能问题
+`element-plus@2.2.0` 后提供虚拟化表格组件，解决表格数据过大导致的卡顿等性能问题。相对于表格组件，用法上区别还是挺大的，尤其是一些附加的功能，例如排序、筛选、自定义单元格/表头渲染等等。本文参照官网文档、示例，结合个人使用总结，演示虚拟化表格的基本使用，记录上述附加功能的基本实现。除组件的相关接口需要按照官网规范使用外，示例中的其它具体实现的方法**仅作参考**。
+
+github上创建了一个项目收纳本文的一些demos: [element-plus-tablev2-demo](https://github.com/zymbth/element-plus-tablev2-demo)
+
+# 一、Element Plus 表格基础
 
 官方介绍：
 
@@ -299,6 +303,7 @@ type SortState = Record<KeyType, SortOrder>
 ### 单项排序
 
 一般想要的就是表格若干项可以排序，但只进行单项排序
+
 ```html
 <el-table-v2
 	:sort-by="sortState"
@@ -322,6 +327,7 @@ const onSort = ({ key, order }) => {
 ### 多重排序
 
 举个例子，有个人员表，希望按城市排序，同一城市的按性别排序，同一性别的按年龄排序
+
 ```html
 <el-table-v2
 	v-model:sort-state="sortState"
@@ -515,7 +521,6 @@ const getData = (total) => {
     getFiltersFromResp()
   });
 };
-
 ```
 
 筛选方法需自行定义
@@ -705,7 +710,7 @@ const getTableData = (total) => {
 </template>
 ```
 
-`el-table-v2-utils.js`: 
+`el-table-v2-utils.js`:
 
 ```javascript
 /**
@@ -791,6 +796,7 @@ function selectArrayFilterHandler(value, filter) {
 如 TableV1 中提供的功能，有时候，我们需要添加默认筛选值；有些筛选项我们希望做成单选的形式。
 
 接上例，可更新代码如下：
+
 ```jsx
 import CustomSelector from '@/components/custom-selector.vue'
 
@@ -923,6 +929,7 @@ const columns = columnData.value.map(col => {
 ```
 
 CustomSelector组件：单选列表（展开的 el-select ）
+
 ```vue
 <script setup>
 const props = defineProps({
@@ -993,6 +1000,7 @@ const CustomizedHeader  = ({ cells, columns, headerIndex }) => {
 ```
 
 类型:
+
 ```typescript
 type HeaderSlotProps = {
   cells: VNode[]
@@ -1043,6 +1051,7 @@ const CustomizedHeader = ({ cells, columns, headerIndex }) => {
 `<el-checkbox-group v-model={ filterableCols[col.dataKey].selected } onChange={ onFilter }>`
 
 方案二：
+
 ```javascript
 const prevFilters = ref([])
 const compareFilters = currFilters => {
@@ -1190,8 +1199,6 @@ const onFilter = () => {
 
 相比之下，少一条依赖，代码简单一点。排序和筛选其实还都是基于源数据，只是使用 hidden 属性过滤 TableV2 的绑定数据
 
-
-
 此方法同样可以应用在上一节单独使用筛选功能时，可以做到只使用源数据。
 
 **注意：**
@@ -1219,4 +1226,3 @@ TableV2 的问题在于它目前是全部重新加载，哪怕是纵向滑动了
 上面说的是正常流程，不正常的是，当设置了动态高度且超出设定高度的行数不少时，一次滚动就会重复触发四五次，再加上连续滚动。假设一个只触发三次的连续滚动，408 \*4\*3=4896 个单元格渲染。如果你够年轻，手速够快，轻松破万。再加上，某些自定义渲染的单元格够“大”够“重”，那。。。
 
 这个问题应该是个 bug，希望后续版本能修复
-
