@@ -1132,7 +1132,7 @@ watch(originData, (newVal) => {
   getFiltersFromResp()
   onFilter() // 执行筛选会更新 tempData
 })
-// 筛选状态更新 | tempData 更新 -> 执行排序
+// 排序状态更新 | tempData 更新 -> 执行排序
 watch(
   [sortState, tempData],
   ([newState, newData]) => {
@@ -1170,7 +1170,7 @@ watch(originData, (newVal) => {
   getFiltersFromResp()
   onFilter()
 })
-// 筛选状态更新 | originData 更新(包括 hidden 更新) -> 执行排序
+// 排序状态更新 | originData 更新(包括 hidden 更新) -> 执行排序
 watch(
   [sortState, originData], // [sortState, tempData],
   ([newState, newData]) => {

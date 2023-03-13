@@ -61,12 +61,14 @@ onMounted(() => {
   }, { immediate: true })
   // 表格项显隐状态更新 -> 执行筛选
   watch(colHiddens, () => {
+    // console.log('watch colHiddens')
     onFilter()
   })
-  // 筛选状态更新 | tempData 更新 | cols' hidden 更新 -> 执行排序
+  // 排序状态更新 | tempData 更新 | cols' hidden 更新 -> 执行排序
   watch(
-    [sortState, tempData],
-    ([newState, newData]) => {
+    [sortState, tempData, colHiddens],
+    ([newState, newData, hiddens]) => {
+      // console.log('handle sort')
       // handle sort ( originData --sort--> tableData )
       const { key, order } = newState ?? {}
       // 数据为空 | 当前无排序，重置 tableData
