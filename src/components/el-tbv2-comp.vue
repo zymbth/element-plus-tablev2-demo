@@ -59,10 +59,10 @@ onMounted(() => {
     getFiltersFromResp()
     onFilter('init')
   }, { immediate: true })
-  // 筛选状态更新 | tempData 更新 -> 执行排序
+  // 筛选状态更新 | tempData 更新 | cols' hidden 更新 -> 执行排序
   watch(
-    [sortState, tempData],
-    ([newState, newData]) => {
+    [sortState, tempData, colHiddens],
+    ([newState, newData, hiddens]) => {
       // handle sort ( originData --sort--> tableData )
       const { key, order } = newState ?? {}
       // 数据为空 | 当前无排序，重置 tableData
@@ -71,7 +71,7 @@ onMounted(() => {
         return
       }
       const currCol = columnData.value.find((c) => c.dataKey === key)
-      if (!currCol) {
+      if (!currCol || currCol.hidden) { // 排序项 hidden 为 true 时，无视该排序
         tableData.value = newData
         return
       }
@@ -107,7 +107,7 @@ const columns = computed(() => {
       dataKey: col.dataKey,
       width: col.width ?? 100,
       sortable: col.sortable ?? false,
-      // fixed: col.fixed,
+      fixed: col.fixed,
       hidden: col.hidden,
       cellRenderer: handleCellRender1.value,
       headerCellRenderer: (props) => {
@@ -144,7 +144,7 @@ const columns = computed(() => {
                     width="14" height="14"
                     style={ {
                       color: (filterableCols[col.dataKey].filterSingle
-                        ? ![null,undefined].includes(filterableCols[col.dataKey].singleSelect)
+                        ? filterableCols[col.dataKey].singleSelect
                         : filterableCols[col.dataKey].selected?.length > 0) ? 'var(--theme-color)' : 'inherit'
                     } }
                   >
@@ -158,6 +158,10 @@ const columns = computed(() => {
       }
     }
   })
+})
+
+const colHiddens = computed(() => {
+  return columnData.value.map(col => !!col.hidden)
 })
 
 // 排序
