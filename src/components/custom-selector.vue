@@ -6,7 +6,7 @@
 import { onMounted } from 'vue'
 
 const props = defineProps({
-  modelValue: { default: '' },
+  modelValue: { default: undefined },
   multiple: { type: Boolean, default: false },
   list: { type: Array, default: [] },
   props: { type: Object, default: {} }
@@ -21,7 +21,7 @@ onMounted(() => {
   if(props.multiple === true && !(props.modelValue instanceof Array))
     emit('update:modelValue', [])
   else if(props.multiple === false && typeof props.modelValue === 'object')
-    emit('update:modelValue', '')
+    emit('update:modelValue', undefined)
 })
 
 function handleOptionClick(val) {

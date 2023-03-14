@@ -150,7 +150,7 @@ const columns = computed(() => {
                     width="14" height="14"
                     style={ {
                       color: (filterableCols[col.dataKey].filterSingle
-                        ? filterableCols[col.dataKey].singleSelect
+                        ? ![null,undefined].includes(filterableCols[col.dataKey].singleSelect)
                         : filterableCols[col.dataKey].selected?.length > 0) ? 'var(--theme-color)' : 'inherit'
                     } }
                   >
@@ -366,8 +366,8 @@ defineExpose({
 }
 .el-table-v2__header-cell .el-table-v2__sort-icon.is-sorting {color:var(--theme-color)}
 @keyframes rotating {
-  0% {transition:rotate(0);}
-  100% {transition:rotate(360deg);}
+  0% {transform:rotate(0);}
+  100% {transform:rotate(360deg);}
 }
 .loading-icon {
   animation: rotating 2s linear infinite;
