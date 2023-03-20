@@ -171,6 +171,14 @@ const colHiddens = computed(() => {
   return columnData.value.map(col => !!col.hidden)
 })
 
+// 控制col显隐后，调整表格宽度
+const maxTBWidth = ref(1000)
+watch(colHiddens, () => {
+  maxTBWidth.value = columns.value.reduce((prev,curr) => {
+    return prev + (!curr.hidden && curr.width || 0)
+  }, 0)
+}, { immediate: true })
+
 // 排序
 
 // 排序状态，是ref对象变量。key: 排序项的key, order: 排序值(asc/desc)
@@ -301,7 +309,10 @@ defineExpose({
 })
 </script>
 <template>
-  <div :style="{ height: tbHeight + 'px' }">
+  <div :style="{
+    height: tbHeight + 'px',
+    'max-width': maxTBWidth + 'px'
+  }">
     <el-auto-resizer>
       <template #default="{ height, width }">
         <el-table-v2
