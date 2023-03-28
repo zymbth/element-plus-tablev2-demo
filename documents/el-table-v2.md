@@ -1,10 +1,12 @@
-Element Plus 虚拟化表格组件的使用
+Element Plus 虚拟化表格组件的使用(排序、筛选、自定义单元格渲染) - 个人使用总结
 
 # 前言
 
-`element-plus@2.2.0` 后提供虚拟化表格组件，解决表格数据过大导致的卡顿等性能问题。相对于表格组件，用法上区别还是挺大的，尤其是一些附加的功能，例如排序、筛选、自定义单元格/表头渲染等等。本文参照官网文档、示例，结合个人使用总结，演示虚拟化表格的基本使用，记录上述附加功能的基本实现。除组件的相关接口需要按照官网规范使用外，示例中的其它具体实现的方法**仅作参考**。
+本文参照官网文档、示例，结合个人使用总结，演示虚拟化表格的基本使用，记录上述附加功能的基本实现。除组件的相关接口需要按照官网规范使用外，示例中的其它具体实现的方法**仅作参考**，提供使用思路。
 
-github上创建了一个项目收纳本文的一些demos: [element-plus-tablev2-demo](https://github.com/zymbth/element-plus-tablev2-demo)
+创建了一个项目收纳本文的一些demos:
+[element-plus-tablev2-demo](https://github.com/zymbth/element-plus-tablev2-demo)
+[element-plus-tablev2-demo (gitee)](https://gitee.com/ymzhao/element-plus-tablev2-demo)
 
 # 一、Element Plus 表格基础
 
@@ -88,6 +90,10 @@ const tableData = [
 后续的示例基于 `element-plus@2.2.17`
 
 # 二、自定义单元格渲染
+
+## jsx/tsx 或 vue 渲染函数
+
+注意，Element Plus 的虚拟化表格组件(TableV2)提供的自定义单元格、表头单元格渲染器都要求返回 `VNode`。需要使用 `jsx/tsx` 或者 `vue 渲染函数` 实现。如无需使用上述两个单元格渲染器，仅作基本数据展示、排序等基本功能的话，可以像 TableV1 一样直接在 vue 单文件组件内使用。
 
 ## 准备工作
 
