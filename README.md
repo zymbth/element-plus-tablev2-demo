@@ -2,18 +2,30 @@
 
 Experiences to use element plus TableV2, including functions of sort and filter.
 
-## Project setup
+## Develop
+
+### via npm
+
+`npm i`
+
+`npm run dev`
+
+### via yarn
 
 `yarn`
 
-## Compiles and hot-reloads for development
-
 `yarn dev`
 
-## Compiles and minifies for production
+### via pnpm
 
-`yarn build`
+`pnpm i`
 
-## 介绍文档
+`pnpm dev`
+
+## Deploy
+
+`npm run build` / `yarn build` / `pnpm build`
+
+## Document
 
 [Usage of el-table-v2](documents/el-table-v2.md)
