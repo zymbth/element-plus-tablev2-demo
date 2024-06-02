@@ -20,8 +20,8 @@ const columns = [
     sortable: true,
     sortMethod: sortByNum,
   },
-  { key: 'code', dataKey: 'code', title: 'code', width: 80 },
-  { key: 'name', dataKey: 'name', title: 'name', width: 80 },
+  { key: 'code', dataKey: 'code', title: 'code', width: 80, _group: 'Group 1' },
+  { key: 'name', dataKey: 'name', title: 'name', width: 80, _group: 'Group 1' },
   {
     key: 'age',
     dataKey: 'age',
@@ -29,6 +29,7 @@ const columns = [
     width: 60,
     sortable: true,
     sortMethod: sortByNum,
+    _group: 'Group 2',
   },
   {
     key: 'gender',
@@ -36,6 +37,7 @@ const columns = [
     title: 'gender',
     width: 80,
     sortable: true,
+    _group: 'Group 2',
   },
   {
     key: 'city',
@@ -79,21 +81,22 @@ const onSort = ({ key, order }) => {
 
 const CustomizedHeader = ({ cells, columns, headerIndex }) => {
   const groupCells = []
+  let currGroupCell = []
   for (let i = 0, len = columns.length; i < len; i++) {
-    if (i === 3) {
-      const width = cells[i].props.column.width + cells[i + 1].props.column.width
+    currGroupCell.push(cells[i])
+    if (!columns[i]._group || columns[i]._group !== columns[i + 1]?._group) {
+      const width = currGroupCell.reduce((prev, curr) => prev + curr.props.column.width, 0)
       groupCells.push(
-        <div class='cell-group' style={{ width: `${width}px` }}>
-          <div class='group-title'>Group</div>
-          <div class='cells-wrap'>
-            {cells[i]}
-            {cells[i + 1]}
+        currGroupCell.length > 1 ? (
+          <div class='cell-group' style={{ width: `${width}px` }}>
+            <div class='group-title'>{columns[i]._group ?? ''}</div>
+            <div class='cells-wrap'>{currGroupCell}</div>
           </div>
-        </div>
+        ) : (
+          currGroupCell[0]
+        )
       )
-      i++
-    } else {
-      groupCells.push(cells[i])
+      currGroupCell = []
     }
   }
   return groupCells

@@ -16,7 +16,7 @@ const views = shallowRef([
   { no: 3, title: '多重排序', value: MultiSortView },
   { no: 4, title: '筛选/过滤器', value: FilterView },
   { no: 5, title: '排序&筛选', value: SortAndFilterView },
-  { no: 6, title: '表头分组(官方,多一级表头)', value: GroupHeaderOfficialView },
+  { no: 6, title: '表头分组(官方,多一级表头存放分组)', value: GroupHeaderOfficialView },
   { no: 7, title: '表头分组(非官方,不增加表头层级)', value: GroupHeaderView },
   { no: 8, title: 'TableV2二次封装(排序&筛选&表项操作)', value: ReencapsulateView },
 ])
