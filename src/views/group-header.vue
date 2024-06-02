@@ -127,6 +127,7 @@ const getDataApi = total => {
 <template>
   <h3>el-table-v2 单项排序 demo</h3>
   <el-table-v2
+    class="tb-group-th"
     :columns="columns"
     :data="tableData"
     :sort-by="sortState"
@@ -143,9 +144,22 @@ const getDataApi = total => {
   <el-button @click="getData()">刷新表格数据</el-button>
 </template>
 <style lang="scss" scoped>
+.tb-group-th {
+  --tablev2-border: var(--el-table-border, 1px solid #ebeef5);
+  border: var(--tablev2-border);
+  &:deep(.el-table-v2__table) {
+    .el-table-v2__header-cell:not(:first-child),
+    .el-table-v2__row-cell:not(:first-child),
+    .cell-group {
+      border-left: var(--tablev2-border);
+    }
+  }
+}
+
 :deep(.cell-group) {
   .group-title {
     text-align: center;
+    border-bottom: var(--tablev2-border);
   }
   .cells-wrap {
     display: flex;

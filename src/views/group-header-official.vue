@@ -20,8 +20,8 @@ const columns = [
     sortable: true,
     sortMethod: sortByNum,
   },
-  { key: 'code', dataKey: 'code', title: 'code', width: 80 },
-  { key: 'name', dataKey: 'name', title: 'name', width: 80 },
+  { key: 'code', dataKey: 'code', title: 'code', width: 80, _group: 'Group 1' },
+  { key: 'name', dataKey: 'name', title: 'name', width: 80, _group: 'Group 1' },
   {
     key: 'age',
     dataKey: 'age',
@@ -29,6 +29,7 @@ const columns = [
     width: 60,
     sortable: true,
     sortMethod: sortByNum,
+    _group: 'Group 2',
   },
   {
     key: 'gender',
@@ -36,6 +37,7 @@ const columns = [
     title: 'gender',
     width: 80,
     sortable: true,
+    _group: 'Group 2',
   },
   {
     key: 'city',
@@ -78,22 +80,19 @@ const onSort = ({ key, order }) => {
 }
 
 const CustomizedHeader = ({ cells, columns, headerIndex }) => {
+  if (headerIndex === 1) return cells
   const groupCells = []
+  let currGroupCell = []
   for (let i = 0, len = columns.length; i < len; i++) {
-    if (i === 3) {
-      const width = cells[i].props.column.width + cells[i + 1].props.column.width
+    currGroupCell.push(cells[i])
+    if (!columns[i]._group || columns[i]._group !== columns[i + 1]?._group) {
+      const width = currGroupCell.reduce((prev, curr) => prev + curr.props.column.width, 0)
       groupCells.push(
         <div class='cell-group' style={{ width: `${width}px` }}>
-          <div class='group-title'>Group</div>
-          <div class='cells-wrap'>
-            {cells[i]}
-            {cells[i + 1]}
-          </div>
+          {columns[i]._group ?? ''}
         </div>
       )
-      i++
-    } else {
-      groupCells.push(cells[i])
+      currGroupCell = []
     }
   }
   return groupCells
@@ -127,12 +126,14 @@ const getDataApi = total => {
 <template>
   <h3>el-table-v2 单项排序 demo</h3>
   <el-table-v2
+    class="tb-group-th"
     :columns="columns"
     :data="tableData"
     :sort-by="sortState"
     @column-sort="onSort"
     :width="666"
     :height="666"
+    :header-height="[36, 50]"
     :fixed="true">
     <template #header="props">
       <CustomizedHeader v-bind="props" />
@@ -143,12 +144,21 @@ const getDataApi = total => {
   <el-button @click="getData()">刷新表格数据</el-button>
 </template>
 <style lang="scss" scoped>
+.tb-group-th {
+  --tablev2-border: var(--el-table-border, 1px solid #ebeef5);
+  border: var(--tablev2-border);
+  &:deep(.el-table-v2__table) {
+    .el-table-v2__header-cell:not(:first-child),
+    .el-table-v2__row-cell:not(:first-child),
+    .cell-group {
+      border-left: var(--tablev2-border);
+    }
+  }
+}
+
 :deep(.cell-group) {
-  .group-title {
-    text-align: center;
-  }
-  .cells-wrap {
-    display: flex;
-  }
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>
