@@ -59,13 +59,13 @@ const handleCellRender = ({
 const loading = ref(false)
 const getData = (total) => {
   loading.value = true
-  getTableData(total).then((res) => {
+  getDataApi(total).then((res) => {
     originData.value = res ?? []
   }).finally(_ => {
     loading.value = false
   })
 }
-const getTableData = (total) => {
+const getDataApi = (total) => {
   if (!total) total = Math.floor(Math.random() * 2000 + 1000)
   return new Promise((resolve, reject) => {
     setTimeout(() => {

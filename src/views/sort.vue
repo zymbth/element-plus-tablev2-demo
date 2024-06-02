@@ -78,12 +78,12 @@ const onSort = ({ key, order }) => {
 };
 
 const getData = (total) => {
-  getTableData(total).then((res) => {
+  getDataApi(total).then((res) => {
     originData.value = res ?? [];
     tableData.value = originData.value;
   });
 };
-const getTableData = (total) => {
+const getDataApi = (total) => {
   if (!total) total = Math.floor(Math.random() * 2000 + 1000);
   return new Promise((resolve, reject) => {
     resolve(
