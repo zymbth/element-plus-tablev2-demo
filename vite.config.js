@@ -23,11 +23,16 @@ const plugins = [
 export default defineConfig({
   plugins,
   define: {
-    'process.env': {}
+    'process.env': {},
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src')
-    }
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
+  server: {
+    host: '0.0.0.0',
+    port: 5201,
+    open: true,
   },
 })
