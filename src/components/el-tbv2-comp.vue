@@ -6,6 +6,7 @@ import { sortByStr, generalFilterHandler } from '@/utils/el-table-v2-utils'
 
 /**
  * el-table-v2 组件封装
+ *
  * 通过传入的表格源数据、表格 columns 数据、表格自定义单元格渲染方法
  * 实现可排序、可筛选、可自定义单元格渲染的 el-table-v2 组件
  * 
@@ -13,42 +14,35 @@ import { sortByStr, generalFilterHandler } from '@/utils/el-table-v2-utils'
  * @prop {Array} columnData 表格columns数据
  * @prop {Function} handleCellRender 单元格自定义渲染方法
  * @prop {number} [tbHeight] 表格高度
- * @prop {Object} [initSort] 初始排序
+ * @prop {Object} [initSort] 初始排序 { key, order }
  * @expose {Object} 通过 defineExpose 暴露给父组件可能需要使用的数据
  * - {Array} filterableCols 只读，从源数据中提取的各筛选项信息
  * - {Array} tableData 只读，当前表格数据(经排序、筛选后的)
  */
 const props = defineProps({
-  originData: { type: Array, default: [] }, // 表格数据
-  columnData: { type: Array, default: [] }, // 表格columns数据
-  handleCellRender: { type: Function },     // 返回单元格自定义渲染方法
-  loading: { type: Boolean, default: false },// 表格数据加载中
-  tbHeight: { type: Number, default: 500 }, // 表格高度
-  initSort: { type: Object },               // 初始排序 { key, order }
+  originData: { type: Array, default: [] },
+  columnData: { type: Array, default: [] },
+  handleCellRender: { type: Function },
+  loading: { type: Boolean, default: false },
+  tbHeight: { type: Number, default: 500 },
+  initSort: { type: Object },
   tbprops: { type: Object, default: {} },
 })
 
 const { originData, columnData } = toRefs(props)
 
-const tbv2props = computed(() => {
-  return Object.assign(
-    {
-      cache: 2,
-      'estimated-row-height': undefined, // 不要开启动态高度行，很卡
-      'row-height': 50,
-      'header-height': 50,
-      'scrollbar-always-on': false
-    },
-    props.tbprops ?? {}
-  )
-})
+const tbv2props = Object.assign({
+  cache: 2,
+  'estimated-row-height': undefined, // 不要开启动态高度行，很卡
+  'row-height': 50,
+  'header-height': 50,
+  'scrollbar-always-on': false
+}, props.tbprops ?? {})
 
 // 默认单元格渲染方法
 const defaultCellRenderer = ({ cellData }) => cellData;
-// 计算单元格渲染方法
-const handleCellRender1 = computed(() => {
-  return props.handleCellRender instanceof Function ? props.handleCellRender : defaultCellRenderer
-})
+// 单元格渲染方法
+const cellRenderer = props.handleCellRender instanceof Function ? props.handleCellRender : defaultCellRenderer
 
 const tableData = ref([])  // 表格当前数据（排序、筛选后）
 const tempData = ref([])   // 中间变量，对源数据的筛选
@@ -59,11 +53,10 @@ onMounted(() => {
     getFiltersFromResp()
     onFilter('init')
   }, { immediate: true })
+
   // 表格项显隐状态更新 -> 执行筛选
-  watch(colHiddens, () => {
-    // console.log('watch colHiddens')
-    onFilter()
-  })
+  watch(colHiddens, () => onFilter())
+
   // 排序状态更新 | tempData 更新 | cols' hidden 更新 -> 执行排序
   watch(
     [sortState, tempData, colHiddens],
@@ -71,7 +64,7 @@ onMounted(() => {
       // console.log('handle sort')
       // handle sort ( originData --sort--> tableData )
       const { key, order } = newState ?? {}
-      // 数据为空 | 当前无排序，重置 tableData
+      // 数据为空 | 当前无排序 -> 重置 tableData
       if (!newData?.length || !key || !order) {
         tableData.value = newData
         return
@@ -115,7 +108,7 @@ const columns = computed(() => {
       sortable: col.sortable ?? false,
       fixed: col.fixed,
       hidden: col.hidden,
-      cellRenderer: handleCellRender1.value,
+      cellRenderer: cellRenderer,
       headerCellRenderer: (props) => {
         if(!col.filterable) return props.column.title
         return (
@@ -323,11 +316,7 @@ defineExpose({
           :width="width"
           :height="height"
           fixed
-          :cache="tbv2props.cache"
-          :estimated-row-height="tbv2props['estimated-row-height']"
-          :row-height="tbv2props['row-height']"
-          :header-height="tbv2props['header-height']"
-          :scrollbar-always-on="tbv2props['scrollbar-always-on']"
+          v-bind="tbv2props"
         >
           <template v-if="loading" #overlay>
             <div
