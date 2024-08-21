@@ -9,13 +9,15 @@ import {
 } from '@/utils/el-table-v2-utils'
 import CustomSelector from '@/components/Selector/popover-wrap.vue'
 import CustomCheckboxGroup from '@/components/CheckboxGroup/popover-wrap.vue'
-import { myTypeof } from '@/utils/common-methods'
+import { isArrElementsEqual, myTypeof } from '@/utils/common-methods'
+import LoadingIcon from '@/components/loading-icon.vue'
 
 /**
  * el-table-v2 组件封装
  *
  * 通过传入的表格源数据、表格 columns 数据、表格自定义单元格渲染方法
  * 实现可排序、可筛选、可自定义单元格渲染的 el-table-v2 组件
+ * 可透传 tablev2 其它属性、插槽(除了row插槽)
  *
  * @prop {Array} originData 表格数据
  * @prop {Array} columnData 表格columns数据
@@ -23,7 +25,6 @@ import { myTypeof } from '@/utils/common-methods'
  * @prop {number} [tbHeight] 表格高度
  * @prop {Object} [initSort] 初始排序 { key, order }
  * @prop {boolean} [filters] 各筛选项列表，若未提供或未提供完全，则从源数据中提取
- * @prop {Object} [tbprops] tablev2其它属性
  * @expose {Object} 通过 defineExpose 暴露给父组件可能需要使用的数据
  * - {Array} filterableCols 只读，从源数据中提取的各筛选项信息
  * - {Array} tableData 只读，当前表格数据(经排序、筛选后的)
@@ -36,21 +37,9 @@ const props = defineProps({
   tbHeight: { type: Number, default: 500 },
   initSort: { type: Object },
   filters: { type: Object },
-  tbprops: { type: Object, default: {} },
 })
 
 const { originData, columnData } = toRefs(props)
-
-const tbv2props = Object.assign(
-  {
-    cache: 2,
-    'estimated-row-height': undefined, // 不要开启动态高度行，很卡
-    'row-height': 50,
-    'header-height': 50,
-    'scrollbar-always-on': false,
-  },
-  props.tbprops ?? {}
-)
 
 // 默认单元格渲染方法
 const defaultCellRenderer = ({ cellData }) => cellData
@@ -107,26 +96,15 @@ onMounted(() => {
 /**
  * TableV2 所需的 columns
  *
- * @prop {string} key column key
- * @prop {string} title 项名
- * @prop {string} dataKey 项值
- * @prop {string|number} width 项宽度
- * @prop {boolean} [sortable] 可排序？
- * @prop {boolean} [hidden] 隐藏该项？
- * @prop {Function} [headerCellRenderer] 自定义表头渲染方法
- * @prop {Function} [cellRenderer] 自定义单元格渲染方法
+ * @see https://element-plus.org/zh-CN/component/table-v2.html#column-%E5%B1%9E%E6%80%A7
+ * @see https://element-plus.org/zh-CN/component/table-v2.html#typings
  */
 const columns = computed(() => {
   // console.log('computed columns')
   return columnData.value.map(col => {
     return {
-      key: col.dataKey,
-      title: col.title,
-      dataKey: col.dataKey,
-      width: col.width ?? 100,
-      sortable: col.sortable ?? false,
-      fixed: col.fixed,
-      hidden: col.hidden,
+      ...col,
+      sortable: !!col.sortable,
       cellRenderer: cellRenderer,
       headerCellRenderer: props => {
         if (!col.filterable) return props.column.title
@@ -268,14 +246,10 @@ const compareFilters = currFilters => {
     prevFilters.value.every((f, idx) => {
       let [currDataKey, { selected: currSelected, singleSelect: currSingleSelect }] =
         currFilters[idx]
-      currSelected = currSelected.slice(0).sort()
       return (
         f.dataKey === currDataKey &&
         f.singleSelect === currSingleSelect &&
-        f.selected
-          .slice(0)
-          .sort()
-          .every((p, idx1) => p === currSelected[idx1])
+        isArrElementsEqual(f.selected, currSelected)
       )
     })
   )
@@ -335,71 +309,28 @@ defineExpose({
           :width="width"
           :height="height"
           fixed
-          v-bind="tbv2props">
+          v-bind="$attrs">
+          <template #header="props">
+            <slot name="header" v-bind="props"></slot>
+          </template>
+          <template #header-cell="props">
+            <slot name="header-cell" v-bind="props"></slot>
+          </template>
+          <template #cell="props">
+            <slot name="cell" v-bind="props"></slot>
+          </template>
+          <!-- <template #row="props">
+            <slot name="row" v-bind="props"></slot>
+          </template> -->
+          <template #footer><slot name="footer"></slot></template>
+          <template #empty><slot name="empty"></slot></template>
           <template v-if="loading" #overlay>
-            <div
-              class="el-loading-mask"
-              style="display: flex; align-items: center; justify-content: center">
-              <svg
-                class="loading-icon"
-                viewBox="0 0 1024 1024"
-                xmlns="http://www.w3.org/2000/svg"
-                width="50"
-                height="50">
-                <path
-                  d="M85.33300000000003 512a426.667 426.667 0 1 0 853.334 0 426.667 426.667 0 1 0-853.334 0z"
-                  fill="#959BA7"
-                  fill-opacity=".3" />
-                <path
-                  d="M938.667 512c0-235.648-191.019-426.667-426.667-426.667V512h426.667z"
-                  fill="#387FE5"
-                  data-spm-anchor-id="a313x.7781069.0.i3"
-                  class="selected" />
-                <path d="M192 512a320 320 0 1 0 640 0 320 320 0 1 0-640 0z" fill="#FFF" />
-              </svg>
-            </div>
+            <slot name="overlay">
+              <LoadingIcon />
+            </slot>
           </template>
         </el-table-v2>
       </template>
     </el-auto-resizer>
   </div>
 </template>
-
-<style lang="scss">
-.tbv2-th-filter {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  .th-cell {
-    margin-right: 6px;
-  }
-  .el-tooltip__trigger {
-    line-height: 14px;
-    > svg {
-      vertical-align: top;
-      cursor: pointer;
-    }
-  }
-}
-.tbv2-filter-btn {
-  border-top: 1px solid #eee;
-  margin: 12px -12px -12px;
-  padding: 0 12px;
-  display: flex;
-  justify-content: space-evenly;
-}
-.el-table-v2__header-cell .el-table-v2__sort-icon.is-sorting {
-  color: var(--theme-color);
-}
-@keyframes rotating {
-  0% {
-    transform: rotate(0);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-.loading-icon {
-  animation: rotating 2s linear infinite;
-}
-</style>

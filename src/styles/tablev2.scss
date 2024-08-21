@@ -1,0 +1,51 @@
+// header-cell 筛选相关样式
+.tbv2-th-filter {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  .th-cell {
+    margin-right: 6px;
+  }
+  .el-tooltip__trigger {
+    line-height: 14px;
+    > svg {
+      vertical-align: top;
+      cursor: pointer;
+    }
+  }
+}
+.tbv2-filter-btn {
+  border-top: 1px solid #eee;
+  margin: 12px -12px -12px;
+  padding: 0 12px;
+  display: flex;
+  justify-content: space-evenly;
+}
+.el-table-v2__header-cell .el-table-v2__sort-icon.is-sorting {
+  color: var(--theme-color);
+}
+
+// 表头分组相关样式
+.el-table-v2[border='true'] .el-table-v2__header-row .group-title {
+  border-left: var(--el-table-border);
+  border-bottom: var(--el-table-border);
+}
+.el-table-v2 {
+  .cell-group {
+    display: flex;
+    flex-direction: column;
+  }
+  .group-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 50%;
+    background-color: var(--el-table-header-bg-color);
+    color: var(--el-table-header-text-color);
+    font-weight: 700;
+  }
+  .cells-wrap {
+    display: flex;
+    height: 50%;
+  }
+}

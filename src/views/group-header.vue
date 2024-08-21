@@ -11,42 +11,18 @@ const sortByStr = (a, b, prop) => a[prop].localeCompare(b[prop], 'zh-CN')
 
 const originData = ref([])
 const tableData = ref([])
+
+/* eslint-disable */
+// prettier-ignore
 const columns = [
-  {
-    key: 'no',
-    dataKey: 'no',
-    title: 'No.',
-    width: 60,
-    sortable: true,
-    sortMethod: sortByNum,
-  },
+  { key: 'no', dataKey: 'no', title: 'No.', width: 60, sortable: true, sortMethod: sortByNum },
   { key: 'code', dataKey: 'code', title: 'code', width: 80, _group: 'Group 1' },
   { key: 'name', dataKey: 'name', title: 'name', width: 80, _group: 'Group 1' },
-  {
-    key: 'age',
-    dataKey: 'age',
-    title: 'Age',
-    width: 60,
-    sortable: true,
-    sortMethod: sortByNum,
-    _group: 'Group 2',
-  },
-  {
-    key: 'gender',
-    dataKey: 'gender',
-    title: 'gender',
-    width: 80,
-    sortable: true,
-    _group: 'Group 2',
-  },
-  {
-    key: 'city',
-    dataKey: 'city',
-    title: 'City',
-    width: 80,
-    sortable: true,
-  },
+  { key: 'age', dataKey: 'age', title: 'Age', width: 60, sortable: true, sortMethod: sortByNum, _group: 'Group 2' },
+  { key: 'gender', dataKey: 'gender', title: 'gender', width: 80, sortable: true, _group: 'Group 2' },
+  { key: 'city', dataKey: 'city', title: 'City', width: 80, sortable: true },
 ]
+/* eslint-enable */
 
 // 排序状态，是ref对象变量。key: 排序项的key, order: 排序值(asc/desc)
 const sortState = ref({ key: 'no', order: TableV2SortOrder.ASC })
@@ -130,7 +106,6 @@ const getDataApi = total => {
 <template>
   <h3>el-table-v2 单项排序 demo</h3>
   <el-table-v2
-    class="tb-group-th"
     :columns="columns"
     :data="tableData"
     :sort-by="sortState"
@@ -146,26 +121,3 @@ const getDataApi = total => {
   <div>sortState: {{ sortState }}</div>
   <el-button @click="getData()">刷新表格数据</el-button>
 </template>
-<style lang="scss" scoped>
-.tb-group-th {
-  --tablev2-border: var(--el-table-border, 1px solid #ebeef5);
-  border: var(--tablev2-border);
-  &:deep(.el-table-v2__table) {
-    .el-table-v2__header-cell:not(:first-child),
-    .el-table-v2__row-cell:not(:first-child),
-    .cell-group {
-      border-left: var(--tablev2-border);
-    }
-  }
-}
-
-:deep(.cell-group) {
-  .group-title {
-    text-align: center;
-    border-bottom: var(--tablev2-border);
-  }
-  .cells-wrap {
-    display: flex;
-  }
-}
-</style>

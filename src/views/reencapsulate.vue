@@ -20,10 +20,14 @@ const originData = ref([]) // 表格源数据
 
 const elTbv2CompRef = ref() // 表格对象
 
+/* eslint-disable */
+// prettier-ignore
+
 /**
  * 表格项信息列表
  *
  * @prop {string} title 项名
+ * @prop {string} key 项key
  * @prop {string} dataKey 项值
  * @prop {string|number} width 项宽度
  * @prop {boolean} [sortable] 可排序？
@@ -33,16 +37,18 @@ const elTbv2CompRef = ref() // 表格对象
  * @prop {boolean} [filterSingle] 可选单个筛选值？否，可选多个筛选值
  * @prop {boolean} [hidden] 隐藏该项？
  * @prop {boolean} [alwaysShow] 始终显示该项？
+ * @prop {string} [_group] 表头分组
  */
 const columnData = ref([
-  { key: "no", dataKey: "no", title: "No.", width: 60, sortable: true, sortMethod: sortByNum, alwaysShow: true },
-  { key: "code", dataKey: "code", title: "code", width: 80, sortable: true },
-  { key: "name", dataKey: "name", title: "name", width: 80 },
-  { key: "age", dataKey: "age", title: "Age", width: 60, sortable: true, sortMethod: sortByNum, hidden: true },
-  { key: "gender", dataKey: "gender", title: "gender", width: 80, filterable: true, filterSingle: true, filteredValue: '男' },
-  { key: "city", dataKey: "city", title: "City", width: 80, sortable: true, filterable: true },
-  { key: "tags", dataKey: "tags", title: "Tags", width: 300, filterable: true, filterMethod: generalArrFilterHandler }
+  { key: 'no', dataKey: 'no', title: 'No.', width: 60, sortable: true, sortMethod: sortByNum, alwaysShow: true },
+  { key: 'code', dataKey: 'code', title: 'code', width: 80, sortable: true, _group: 'Group 1' },
+  { key: 'name', dataKey: 'name', title: 'name', width: 80, _group: 'Group 1' },
+  { key: 'age', dataKey: 'age', title: 'Age', width: 60, sortable: true, sortMethod: sortByNum, hidden: true },
+  { key: 'gender', dataKey: 'gender', title: 'gender', width: 80, filterable: true, filterSingle: true, filteredValue: '男', _group: 'Group 2' },
+  { key: 'city', dataKey: 'city', title: 'City', width: 80, sortable: true, filterable: true, _group: 'Group 2' },
+  { key: 'tags', dataKey: 'tags', title: 'Tags', width: 300, filterable: true, filterMethod: generalArrFilterHandler },
 ])
+/* eslint-enable */
 
 const filters = reactive(
   columnData.value.reduce((prev, curr) => {
@@ -67,6 +73,29 @@ const handleCellRender = ({ cellData, column: { dataKey }, rowData: row }) => {
     )
   }
   return cellData
+}
+
+const CustomizedHeader = ({ cells, columns, headerIndex }) => {
+  const groupCells = []
+  let currGroupCell = []
+  for (let i = 0, len = columns.length; i < len; i++) {
+    currGroupCell.push(cells[i])
+    if (!columns[i]._group || columns[i]._group !== columns[i + 1]?._group) {
+      const width = currGroupCell.reduce((prev, curr) => prev + curr.props.column.width, 0)
+      groupCells.push(
+        currGroupCell.length > 1 ? (
+          <div class='cell-group' style={{ width: `${width}px` }}>
+            <div class='group-title'>{columns[i]._group ?? ''}</div>
+            <div class='cells-wrap'>{currGroupCell}</div>
+          </div>
+        ) : (
+          currGroupCell[0]
+        )
+      )
+      currGroupCell = []
+    }
+  }
+  return groupCells
 }
 
 const loading = ref(false)
@@ -118,7 +147,7 @@ async function getDataApi(total) {
     <!-- List -->
     <ElTbv2Comp
       ref="elTbv2CompRef"
-      class="tb-targets"
+      class="tb-test"
       :originData="originData"
       :columnData="columnData"
       :handleCellRender="handleCellRender"
@@ -126,11 +155,12 @@ async function getDataApi(total) {
       :tbHeight="tbHeight"
       :initSort="{ key: 'age', order: 'desc' }"
       :filters="filters"
-      :tbprops="{
-        cache: 0,
-        'row-height': 40,
-        'scrollbar-always-on': true,
-      }" />
+      :row-height="40"
+      :scrollbar-always-on="true">
+      <template #header="props">
+        <CustomizedHeader v-bind="props" />
+      </template>
+    </ElTbv2Comp>
   </div>
 </template>
 <style lang="scss" scope>
