@@ -292,6 +292,8 @@ defineExpose({
   filterableCols: readonly(filterableCols),
   tableData: readonly(tableData),
 })
+
+const DefaultHeader = ({ cells, columns, headerIndex }) => cells
 </script>
 <template>
   <div
@@ -311,17 +313,10 @@ defineExpose({
           fixed
           v-bind="$attrs">
           <template #header="props">
-            <slot name="header" v-bind="props"></slot>
+            <slot name="header" v-bind="props">
+              <DefaultHeader v-bind="props" />
+            </slot>
           </template>
-          <template #header-cell="props">
-            <slot name="header-cell" v-bind="props"></slot>
-          </template>
-          <template #cell="props">
-            <slot name="cell" v-bind="props"></slot>
-          </template>
-          <!-- <template #row="props">
-            <slot name="row" v-bind="props"></slot>
-          </template> -->
           <template #footer><slot name="footer"></slot></template>
           <template #empty><slot name="empty"></slot></template>
           <template v-if="loading" #overlay>
