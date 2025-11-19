@@ -6,9 +6,11 @@ Experiences to use element plus TableV2, including functions of sort and filter.
 
 [Github Page](https://zymbth.github.io/element-plus-tablev2-demo/)
 
-![demo](/docs/demo-element-plus-tablev2.jpg)
+![demo](/docs/demo-element-plus-tablev2.png)
 
 ## Install
+
+Vite requires Node.js version 20.19+ or 22.12+.
 
 `npm i` / `yarn` / `pnpm i`
 

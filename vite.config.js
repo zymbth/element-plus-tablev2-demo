@@ -5,29 +5,29 @@ import viteCompression from 'vite-plugin-compression'
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
-// const path = require('path')
-import * as path from 'path'
+import { resolve } from 'node:path'
 
-const plugins = [
-  vue(),
-  vueJsx({}),
-  viteCompression(),
-  AutoImport({
-    resolvers: [ElementPlusResolver()],
-  }),
-  Components({
-    resolvers: [ElementPlusResolver()],
-  }),
-]
+const root = process.cwd()
+
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins,
+  plugins: [
+    vue(),
+    vueJsx({}),
+    viteCompression(),
+    AutoImport({
+      resolvers: [ElementPlusResolver()],
+    }),
+    Components({
+      resolvers: [ElementPlusResolver()],
+    }),
+  ],
   define: {
     'process.env': {},
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@': resolve(root, '.', 'src'),
     },
   },
   server: {

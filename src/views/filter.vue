@@ -2,6 +2,7 @@
 import { ref, reactive, onMounted, watch } from "vue"
 import { generalFilterHandler, generalArrFilterHandler } from '@/utils/el-table-v2-utils'
 import CustomSelector from '@/components/custom-selector.vue'
+import { apiGetData } from "../api"
 
 onMounted(() => {
   getData()
@@ -15,15 +16,20 @@ onMounted(() => {
 
 const originData = ref([]) // 表格源数据
 const tableData = ref([])  // 表格当前数据（排序、筛选后）
+
+/* eslint-disable */
+// prettier-ignore
 const columnData = ref([
   { key: "no", dataKey: "no", title: "No.", width: 60 },
-  { key: "code", dataKey: "code", title: "code", width: 80 },
-  { key: "name", dataKey: "name", title: "name", width: 80 },
+  { key: "code", dataKey: "code", title: "Code", width: 80 },
+  { key: "name", dataKey: "name", title: "Name", width: 80 },
   { key: "age", dataKey: "age", title: "Age", width: 60 },
-  { key: "gender", dataKey: "gender", title: "gender", width: 80, filterable: true, filterSingle: true, filteredValue: '男' },
+  { key: "gender", dataKey: "gender", title: "Gender", width: 80, filterable: true, filterSingle: true, filteredValue: '男' },
   { key: "city", dataKey: "city", title: "City", width: 80, filterable: true },
   { key: "tags", dataKey: "tags", title: "Tags", width: 150, filterable: true, filterMethod: generalArrFilterHandler }
 ]);
+/* eslint-enable */
+
 const columns = columnData.value.map(col => {
 	return {
 		key: col.dataKey,
@@ -181,28 +187,8 @@ const getFiltersFromResp = () => {
 }
 
 const getData = (total) => {
-  getDataApi(total).then((res) => {
+  apiGetData(total).then((res) => {
     originData.value = res ?? []
-  })
-}
-
-const getDataApi = (total) => {
-  if (!total) total = Math.floor(Math.random() * 2000 + 1000)
-  return new Promise((resolve, reject) => {
-    resolve(
-      Array.from({ length: total }).map((_, idx) => {
-        return {
-          no: idx + 1,
-          code: Math.floor(Math.random() * 100000).toString(16),
-          name: Math.floor(Math.random() * 100000).toString(16),
-          age: Math.floor(Math.random() * 30 + 18),
-          gender: Math.random() > 0.5 ? "男" : "女",
-          city: ["北京", "上海", "深圳"][Math.floor(Math.random() * 3)],
-          tags: tagList.sort((a,b) => Math.random() - 0.5)
-            .slice(0, Math.floor(Math.random() * 4))
-        }
-      })
-    )
   })
 }
 </script>

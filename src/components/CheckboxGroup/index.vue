@@ -1,12 +1,11 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
-import { myTypeof, debounce, myIsNumber } from '@/utils/common-methods'
+import { computed, ref, nextTick } from 'vue'
+import { debounce, myIsNumber, myTypeof } from '@/utils/common-methods'
 
 /**
  * 组件 - 自定义复选框组
  * 内容为一个复选框组，提供对复选项的搜索、筛选、排序、全选/反选功能
  *
- * @param {Array} modelValue 已选筛选项列表
  * @param {Array} list 筛选项列表，元素可以是字符串或对象，对象格式：{ value: 'xxx', text: 'xxx' }
  * @param {boolean} [enableSearch] 可搜索筛选项
  * @param {boolean} [enableSelectAll] 可全选/反选筛选项
@@ -14,49 +13,36 @@ import { myTypeof, debounce, myIsNumber } from '@/utils/common-methods'
  * @param {number} [autoEnabledAmount] 可选项超出限度时，自动开启相关菜单
  */
 const props = defineProps({
-  modelValue: { type: Array, default: [] },
-  list: { type: Array, default: [] },
+  list: { type: Array, default: () => [] },
   enableSearch: { type: Boolean, default: false },
   enableSelectAll: { type: Boolean, default: false },
   enableSort: { type: Boolean, default: false },
   autoEnabledAmount: { type: [Number, String], default: -1 },
 })
 
-const emit = defineEmits(['update:modelValue'])
-
 // 选中列表
-const selected = computed({
-  get: () => props.modelValue,
-  set: value => emit('update:modelValue', value),
-})
+const selected = defineModel({ type: Array, default: () => [] })
 
-const filterList = ref([]) // 可筛选值列表
-const enableAllIfNeeded = ref(false) // 是否根据列表总数启动搜索项
+// 可筛选值列表
+const filterList = computed(
+  () => props.list.map((item) => {
+    const tmp = myTypeof(item) !== 'object' ? { value: item, text: item } : { ...item }
+    tmp._hidden = false
+    return tmp
+  })
+)
 
-// 监听，更新可筛选值列表
-watch(
-  () => props.list,
-  newVal => {
-    filterList.value = newVal.map(item => {
-      let tmp
-      if (myTypeof(item) !== 'object') {
-        tmp = { value: item, text: item }
-      } else {
-        tmp = { ...item }
-      }
-      tmp._hidden = false
-      return tmp
-    })
-    if (myIsNumber(props.autoEnabledAmount) && props.autoEnabledAmount > -1)
-      enableAllIfNeeded.value = filterList.value.length >= Number(props.autoEnabledAmount)
-  },
-  { immediate: true }
+// 是否根据列表总数启用搜索项
+const enableAllIfNeeded = computed(
+  () => myIsNumber(props.autoEnabledAmount)
+    && props.autoEnabledAmount > -1
+    && props.list.length >= Number(props.autoEnabledAmount)
 )
 
 // 搜索字符串
 const queryStr = ref('')
 // 搜索可筛选值
-const handleQuery = () => {
+function handleQuery() {
   const q = queryStr.value.trim().toLowerCase()
   if (!q) {
     filterList.value.forEach(item => (item._hidden = false))
@@ -77,7 +63,6 @@ function beforePopShow() {
   queryStr.value = ''
   filterList.value.forEach(item => (item._hidden = false))
 }
-defineExpose({ beforePopShow })
 
 // 排序
 const orderBy = ref('default')
@@ -88,17 +73,22 @@ function handleSwitchAsc(order) {
 }
 // 当前排序、筛选后的列表
 const currFilterList = computed(() => {
-  if (orderBy.value === 'default') return filterList.value.slice(0).filter(item => !item._hidden)
-  else if (orderBy.value === 'asc')
+  if (orderBy.value === 'default') {
+    return filterList.value.slice(0).filter(item => !item._hidden)
+  }
+  if (orderBy.value === 'asc') {
     return filterList.value
       .slice(0)
       .sort((a, b) => a.text.localeCompare(b.text))
       .filter(item => !item._hidden)
-  else if (orderBy.value === 'desc')
+  }
+  if (orderBy.value === 'desc') {
     return filterList.value
       .slice(0)
       .sort((a, b) => b.text.localeCompare(a.text))
       .filter(item => !item._hidden)
+  }
+  return []
 })
 
 // 全选状态
@@ -109,19 +99,10 @@ const isIndeterminate = computed(() => {
 })
 // 更新全选状态
 function updSelectAll() {
-  selectAll.value =
-    selected.value.length === currFilterList.value.length &&
-    currFilterList.value.every(item => selected.value.includes(item.value))
+  selectAll.value
+    = selected.value.length === currFilterList.value.length
+      && currFilterList.value.every(item => selected.value.includes(item.value))
 }
-// 全选状态计算
-watch(
-  selected,
-  newVal => {
-    // selectAll.value = newVal.length === props.list.length
-    updSelectAll()
-  },
-  { deep: true, immediate: true }
-)
 
 // 组件事件监听：全选/取消全选
 function handleSelectAllChange(val) {
@@ -133,12 +114,17 @@ function handleSelectAll() {
   handleSelectAllChange(selectAll.value)
 }
 // 点击事件：反选
-function handleSelectInvert() {
+async function handleSelectInvert() {
   selected.value = filterList.value
     .filter(item => !item._hidden && !selected.value.includes(item.value))
     .map(item => item.value)
+  await nextTick()
+  updSelectAll()
 }
+
+defineExpose({ beforePopShow })
 </script>
+
 <template>
   <!-- query filters -->
   <el-input
@@ -147,7 +133,8 @@ function handleSelectInvert() {
     @input="debounceHandleQuery"
     clearable
     placeholder="Enter keywords to query"
-    size="small">
+    size="small"
+  >
     <template #suffix>
       <svg
         @click="handleQuery"
@@ -181,7 +168,8 @@ function handleSelectInvert() {
     <el-checkbox
       v-model="selectAll"
       :indeterminate="isIndeterminate"
-      @change="handleSelectAllChange"></el-checkbox>
+      @change="handleSelectAllChange"
+    />
     <span style="padding-left: 8px">
       (<span class="select-btn" @click.prevent="handleSelectAll">Select all</span> |
       <span class="select-btn" @click.prevent="handleSelectInvert">Select invert</span>)
@@ -189,13 +177,16 @@ function handleSelectInvert() {
   </div>
   <!-- scrollable checkbox group -->
   <el-scrollbar max-height="460px" :always="true">
-    <el-checkbox-group v-model="selected" class="checkboxs-wrap">
-      <el-checkbox v-for="item in currFilterList" :key="item.value" :label="item.value">{{
-        item.text
-      }}</el-checkbox>
+    <el-checkbox-group v-model="selected" @change="updSelectAll" class="checkboxs-wrap">
+      <el-checkbox v-for="item in currFilterList" :key="item.value" :label="item.value">
+        {{
+          item.text
+        }}
+      </el-checkbox>
     </el-checkbox-group>
   </el-scrollbar>
 </template>
+
 <style lang="scss" scoped>
 .sort-menus {
   margin: 6px 0 0;

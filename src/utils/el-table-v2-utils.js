@@ -1,3 +1,4 @@
+import { TableV2SortOrder } from 'element-plus'
 import { myIsNumber } from '@/utils/common-methods'
 
 /**
@@ -63,7 +64,18 @@ function selectArrayFilterHandler(value, filter) {
   return (!filter && filter !== 0) || value?.includes(filter)
 }
 
+export function sortByChar(a, b, prop) {
+  try {
+    const a1 = String(a[prop])
+    const b1 = String(b[prop])
+    return a1.localeCompare(b1, 'zh-CN')
+  } catch {
+    return 0
+  }
+}
+
 /**
+ * @deprecated 空值处理存在bug，使用sortByNum1或sortByNumAndOrder
  * 数值排序方法（针对对象指定属性进行数值对比）
  *
  * @param {Object} a 对象a
@@ -86,14 +98,63 @@ export function sortByNum(a, b, prop) {
   }
 }
 
-export function sortByStr(a, b, prop) {
+/**
+ * 用于对象数组内数值型排序对比的方法，返回升序排序对比结果
+ *
+ * @param {object} a 对象元素a
+ * @param {object} b 对象元素b
+ * @param {string} prop 排序属性名
+ * @param {string} order [asc|desc] 排序顺序，仅用于处理空值，不更改对比结果
+ * @returns {number} [-1|0|1]，升序排序对比结果
+ * @example
+ * import { sortByNum1 } from '@/utils/el-table-v2-utils'
+ *
+ * const arr = [] // Array of Object
+ * const target1 = arr.slice(0).sort((a,b) => sortByNum1(a,b,'no'))
+ * const target2 = arr.slice(0).sort((a,b) => sortByNum1(a,b,'no','desc'))
+ */
+export function sortByNum1(a, b, prop, order = TableV2SortOrder.ASC) {
+  const nullVal = order === TableV2SortOrder.ASC ? Infinity : -Infinity
   try {
-    const a1 = a[prop] + ''
-    const b1 = b[prop] + ''
-    return a1.localeCompare(b1, 'zh-CN')
-  } catch (err) {
+    const a1 = myIsNumber(a[prop]) ? Number(a[prop]) : nullVal
+    const b1 = myIsNumber(b[prop]) ? Number(b[prop]) : nullVal
+    return fnSortCompare(a1, b1)
+  } catch {
     return 0
   }
+}
+
+/**
+ * 用于对象数组内数值型排序对比的方法，返回升/降序排序对比结果
+ *
+ * @param {object} a 对象元素a
+ * @param {object} b 对象元素b
+ * @param {string} prop 排序属性名
+ * @param {string} order [asc|desc] 排序顺序，仅用于处理空值，不更改对比结果
+ * @returns {number} [-1|0|1]，升/降序排序对比结果
+ * @example
+ * import { sortByNum1 } from '@/utils/el-table-v2-utils'
+ *
+ * const arr = [] // Array of Object
+ * const target1 = arr.slice(0).sort((a,b) => sortByNum1(a,b,'no'))
+ * const target2 = arr.slice(0).sort((a,b) => sortByNum1(a,b,'no','desc'))
+ */
+export function sortByNumAndOrder(a, b, prop, order = TableV2SortOrder.ASC) {
+  const isAsc = order === TableV2SortOrder.ASC
+  const nullVal = isAsc ? Infinity : -Infinity
+  try {
+    const a1 = myIsNumber(a[prop]) ? Number(a[prop]) : nullVal
+    const b1 = myIsNumber(b[prop]) ? Number(b[prop]) : nullVal
+    let res = fnSortCompare(a1, b1)
+    if (!isAsc) res = 0 - res
+    return res
+  } catch {
+    return 0
+  }
+}
+
+function fnSortCompare(a, b) {
+  return a === b ? 0 : a > b ? 1 : -1
 }
 
 /**

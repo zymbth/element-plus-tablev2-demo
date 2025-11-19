@@ -1,16 +1,15 @@
 <script setup lang="jsx">
-import { ref, reactive, toRefs, onMounted, readonly, watch, computed } from 'vue'
-// import CustomSelector from '@/components/custom-selector.vue'
 import { TableV2SortOrder } from 'element-plus'
+import { computed, onMounted, reactive, readonly, ref, toRefs, watch } from 'vue'
+import { debounce, isArrElementsEqual, myTypeof } from '@/utils/common-methods'
 import {
-  sortByStr,
+  sortByChar,
   generalFilterHandler,
   getFilterListsByPropsFromObjArr,
 } from '@/utils/el-table-v2-utils'
-import CustomSelector from '@/components/Selector/popover-wrap.vue'
-import CustomCheckboxGroup from '@/components/CheckboxGroup/popover-wrap.vue'
-import { isArrElementsEqual, myTypeof } from '@/utils/common-methods'
-import LoadingIcon from '@/components/loading-icon.vue'
+import CustomCheckboxGroup from './CheckboxGroup/popover-wrap.vue'
+import LoadingIcon from './loading-icon.vue'
+import CustomSelector from './Selector/popover-wrap.vue'
 
 /**
  * el-table-v2 组件封装
@@ -23,23 +22,45 @@ import LoadingIcon from '@/components/loading-icon.vue'
  * @prop {Array} columnData 表格columns数据
  * @prop {Function} handleCellRender 单元格自定义渲染方法
  * @prop {number} [tbHeight] 表格高度
- * @prop {Object} [initSort] 初始排序 { key, order }
+ * @prop {object} [initSort] 初始排序 { key, order }
  * @prop {boolean} [filters] 各筛选项列表，若未提供或未提供完全，则从源数据中提取
- * @expose {Object} 通过 defineExpose 暴露给父组件可能需要使用的数据
+ * @prop {boolean} [isFullWidth] 表格占满宽度
+ * @expose {object} 通过 defineExpose 暴露给父组件可能需要使用的数据
  * - {Array} filterableCols 只读，从源数据中提取的各筛选项信息
  * - {Array} tableData 只读，当前表格数据(经排序、筛选后的)
  */
 const props = defineProps({
-  originData: { type: Array, default: [] },
-  columnData: { type: Array, default: [] },
+  originData: { type: Array, default: () => [] },
+  columnData: { type: Array, default: () => [] },
   handleCellRender: { type: Function },
   loading: { type: Boolean, default: false },
   tbHeight: { type: Number, default: 500 },
   initSort: { type: Object },
   filters: { type: Object },
+  isFullWidth: { type: Boolean, default: false },
 })
 
+/**
+ * 自定义排序/筛选处理(处理逻辑在组件外部自定义)
+ *
+ * - 自定义排序：设置column的sortable为'custom'；onSort中触发父组件排序方法；跳过组件内的排序监听处理
+ * - 自定义筛选：设置column的filterable为'custom'；onFilter中触发父组件筛选方法；onFilter中跳过筛选逻辑
+ */
+const emit = defineEmits(['sortChange', 'filterChange'])
+
 const { originData, columnData } = toRefs(props)
+
+/**
+ * 使表格宽度占满（isFullWidth开启）
+ *
+ * 根据表项宽度总和，小于表格容器宽度时等比例扩大以占满
+ */
+
+const wrapEl = ref() // 表格容器
+const wrapWidth = ref(0) // 表格容器宽度
+// 监听表格容器宽度变化，更新 wrapWidth
+const debounceUpdWrapWidth = debounce(width => (wrapWidth.value = width), 500)
+const handleTBWrapResize = ({ width }) => props.isFullWidth && width && debounceUpdWrapWidth(width)
 
 // 默认单元格渲染方法
 const defaultCellRenderer = ({ cellData }) => cellData
@@ -51,12 +72,15 @@ const tableData = ref([]) // 表格当前数据（排序、筛选后）
 const tempData = ref([]) // 中间变量，对源数据的筛选
 
 onMounted(() => {
+  // 初始计算一次 wrapWidth
+  wrapWidth.value = wrapEl.value.offsetWidth
   // 源数据更新 -> 更新筛选项各自的可筛选列表, 执行筛选
   watch(
     originData,
     () => {
-      resetAllFiltersList()
-      resetAllFilters()
+      setFilterLists()
+      resetDefaultFilters() // 设置默认筛选项
+      resetDefaultSort() // 恢复默认排序
       onFilter('init')
     },
     { immediate: true }
@@ -68,7 +92,7 @@ onMounted(() => {
   // 排序状态更新 | tempData 更新 | cols' hidden 更新 -> 执行排序
   watch(
     [sortState, tempData, colHiddens],
-    ([newState, newData, hiddens]) => {
+    ([newState, newData, _hiddens]) => {
       // handle sort ( originData --sort--> tableData )
       const { key, order } = newState ?? {}
       // 数据为空 | 当前无排序 -> 重置 tableData
@@ -77,15 +101,15 @@ onMounted(() => {
         return
       }
       const currCol = columnData.value.find(c => c.dataKey === key)
-      if (!currCol || currCol.hidden) {
+      if (!currCol || currCol.hidden || currCol.sortable === 'custom') {
         // 排序项 hidden 为 true 时，无视该排序
         tableData.value = newData
         return
       }
-      const currSortMethod = currCol.sortMethod ?? sortByStr
+      const currSortMethod = currCol.sortMethod ?? sortByChar
       // 进行排序
       tableData.value = newData.slice(0).sort((a, b) => {
-        const res = currSortMethod(a, b, currCol.dataKey)
+        const res = currSortMethod(a, b, currCol.dataKey, order)
         return order === TableV2SortOrder.ASC ? res : 0 - res
       })
     },
@@ -100,33 +124,40 @@ onMounted(() => {
  * @see https://element-plus.org/zh-CN/component/table-v2.html#typings
  */
 const columns = computed(() => {
+  // 根据表项宽度总和，小于表格容器宽度时等比例扩大以占满
+  const needExtd = props.isFullWidth && wrapWidth.value > maxTBWidth.value
+  const extdFn = w => w / (maxTBWidth.value / wrapWidth.value)
   // console.log('computed columns')
   return columnData.value.map(col => {
     return {
       ...col,
+      width: needExtd ? extdFn(col.width) : col.width,
       sortable: !!col.sortable,
-      cellRenderer: cellRenderer,
+      cellRenderer,
       headerCellRenderer: props => {
+        if (col.headerCellRenderer) return col.headerCellRenderer(props)
         if (!col.filterable) return props.column.title
         return (
           <div class='tbv2-th-filter'>
             <span class='th-cell'>{props.column.title}</span>
-            {filterableCols[col.dataKey].filterSingle ? (
-              <CustomSelector
-                trigger='hover'
-                v-model={filterableCols[col.dataKey].singleSelect}
-                list={filterableCols[col.dataKey].list}
-                onChange={onFilter}
-              />
-            ) : (
-              <CustomCheckboxGroup
-                trigger='hover'
-                v-model={filterableCols[col.dataKey].selected}
-                list={filterableCols[col.dataKey].list}
-                autoEnabledAmount='20'
-                onChange={onFilter}
-              />
-            )}
+            {filterableCols[col.dataKey].filterSingle
+              ? (
+                  <CustomSelector
+                    v-model={filterableCols[col.dataKey].singleSelect}
+                    list={filterableCols[col.dataKey].list}
+                    trigger={col.sortable ? 'hover' : 'click'}
+                    onChange={onFilter}
+                  />
+                )
+              : (
+                  <CustomCheckboxGroup
+                    v-model={filterableCols[col.dataKey].selected}
+                    list={filterableCols[col.dataKey].list}
+                    autoEnabledAmount='10'
+                    trigger={col.sortable ? 'hover' : 'click'}
+                    onChange={onFilter}
+                  />
+                )}
           </div>
         )
       },
@@ -163,6 +194,14 @@ const onSort = ({ key, order }) => {
   // console.log('onSort', { key, order })
   if (!order) order = TableV2SortOrder.ASC
   sortState.value = { key, order }
+  emit('sortChange', { key, order })
+}
+// 重置为初始默认排序（props.initSort -> sortState）
+function resetDefaultSort() {
+  sortState.value = {
+    key: props.initSort?.key ?? undefined,
+    order: props.initSort?.order ?? undefined,
+  }
 }
 
 // 筛选
@@ -193,13 +232,14 @@ const filterableCols = reactive(
         filterMethod: curr.filterMethod ?? generalFilterHandler,
         filteredValue: curr.filteredValue,
         filterSingle: curr.filterSingle ?? false,
+        isCustom: curr.filterable === 'custom',
       }
       return prev
     }, {})
 )
 
-// 重置所有筛选项的列表
-function resetAllFiltersList() {
+// 设置每个筛选的可选列表
+function setFilterLists() {
   const filterKeys = Object.keys(filterableCols)
   // 已提供的list
   if (myTypeof(props.filters) === 'object') {
@@ -220,12 +260,12 @@ function resetAllFiltersList() {
   }
 }
 
-// 重置所有筛选的选择
-function resetAllFilters() {
-  for (let dataKey in filterableCols) {
+// 重置为初始默认筛选（columnData[dataKey].filteredValue -> filterableCols[dataKey].['selected'|'singleSelect']）
+function resetDefaultFilters() {
+  for (const dataKey in filterableCols) {
     // 根据是否多选，获取对应默认排序（值/列表）
     filterableCols[dataKey].selected = !filterableCols[dataKey].filterSingle
-      ? filterableCols[dataKey].filteredValue instanceof Array
+      ? Array.isArray(filterableCols[dataKey].filteredValue)
         ? filterableCols[dataKey].filteredValue
         : []
       : []
@@ -237,71 +277,78 @@ function resetAllFilters() {
   }
 }
 
-// 前一筛选状态
+// 上次筛选状态
 const prevFilters = ref([])
-// 对比筛选状态
-const compareFilters = currFilters => {
+/**
+ * 对比筛选状态是否有变化
+ * @param currFilters 本次筛选状态
+ */
+const hasFiltersChanged = currFilters => {
   return (
-    prevFilters.value.length === currFilters.length &&
-    prevFilters.value.every((f, idx) => {
-      let [currDataKey, { selected: currSelected, singleSelect: currSingleSelect }] =
-        currFilters[idx]
+    prevFilters.value.length === currFilters.length
+    && prevFilters.value.every((f, idx) => {
+      const [currDataKey, { selected: currSelected, singleSelect: currSingleSelect }]
+        = currFilters[idx]
       return (
-        f.dataKey === currDataKey &&
-        f.singleSelect === currSingleSelect &&
-        isArrElementsEqual(f.selected, currSelected)
+        f.dataKey === currDataKey
+        && f.singleSelect === currSingleSelect
+        && isArrElementsEqual(f.selected, currSelected)
       )
     })
   )
 }
 // 筛选
 const onFilter = flag => {
-  // console.log('on Filter')
   const allFilters = Object.entries(filterableCols).filter(([dataKey, configs]) => {
     const currCol = columnData.value.find(c => c.dataKey === dataKey)
     return currCol && !currCol.hidden && configs.filterSingle
       ? ![null, undefined].includes(configs.singleSelect)
       : configs.selected?.length > 0
   })
-  const compareRes = compareFilters(allFilters)
-  // console.log('compareRes', compareRes, flag !== 'init' && compareRes)
-  if (flag !== 'init' && compareRes) return
+  if (flag !== 'init' && hasFiltersChanged(allFilters)) return
+
   prevFilters.value = allFilters.map(([dataKey, configs]) => ({
     dataKey,
     selected: configs.selected,
     singleSelect: configs.singleSelect,
+    isCustom: configs.isCustom,
   }))
   tempData.value = originData.value.filter(p => {
     return allFilters.every(([dataKey, configs]) => {
       return (
-        !configs.filterMethod ||
-        configs.filterMethod(
+        !configs.filterMethod
+        || configs.isCustom
+        || configs.filterMethod(
           p[dataKey],
           configs.filterSingle ? configs.singleSelect : configs.selected
         )
       )
     })
   })
+  if (flag !== 'init') emit('filterChange')
 }
-const onReset = dataKey => {
-  filterableCols[dataKey].selected = []
-  onFilter()
-}
+// const onReset = (dataKey) => {
+//   filterableCols[dataKey].selected = []
+//   onFilter()
+// }
+
+const DefaultHeader = ({ cells }) => cells
 
 defineExpose({
   filterableCols: readonly(filterableCols),
   tableData: readonly(tableData),
 })
-
-const DefaultHeader = ({ cells, columns, headerIndex }) => cells
 </script>
+
 <template>
   <div
+    ref="wrapEl"
     :style="{
-      height: tbHeight + 'px',
-      'max-width': maxTBWidth + 'px',
-    }">
-    <el-auto-resizer>
+      'height': `${tbHeight}px`,
+      'max-width': props.isFullWidth ? 'initial' : `${maxTBWidth}px`,
+    }"
+  >
+    <el-auto-resizer @resize="handleTBWrapResize">
       <template #default="{ height, width }">
         <el-table-v2
           :columns="columns"
@@ -311,14 +358,19 @@ const DefaultHeader = ({ cells, columns, headerIndex }) => cells
           :width="width"
           :height="height"
           fixed
-          v-bind="$attrs">
-          <template #header="props">
-            <slot name="header" v-bind="props">
-              <DefaultHeader v-bind="props" />
+          v-bind="$attrs"
+        >
+          <template #header="props1">
+            <slot name="header" v-bind="props1">
+              <DefaultHeader v-bind="props1" />
             </slot>
           </template>
-          <template #footer><slot name="footer"></slot></template>
-          <template #empty><slot name="empty"></slot></template>
+          <template #footer>
+            <slot name="footer" />
+          </template>
+          <template #empty>
+            <slot name="empty" />
+          </template>
           <template v-if="loading" #overlay>
             <slot name="overlay">
               <LoadingIcon />

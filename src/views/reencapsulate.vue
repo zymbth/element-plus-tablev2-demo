@@ -1,4 +1,5 @@
 <script lang="jsx" setup>
+import { TableV2SortOrder } from 'element-plus'
 import { ref, reactive, onMounted } from 'vue'
 import {
   sortByNum,
@@ -7,7 +8,7 @@ import {
 } from '@/utils/el-table-v2-utils'
 import ElTbv2Comp from '@/components/el-tbv2-comp.vue'
 import ElTbColsOperate from '@/components/el-tb-cols-operate.vue'
-import { manualDelay } from '@/utils/common-methods'
+import { apiGetData } from '../api'
 
 const tbHeight = ref(500) // 表格高度
 
@@ -41,10 +42,10 @@ const elTbv2CompRef = ref() // 表格对象
  */
 const columnData = ref([
   { key: 'no', dataKey: 'no', title: 'No.', width: 60, sortable: true, sortMethod: sortByNum, alwaysShow: true },
-  { key: 'code', dataKey: 'code', title: 'code', width: 80, sortable: true, _group: 'Group 1' },
-  { key: 'name', dataKey: 'name', title: 'name', width: 80, _group: 'Group 1' },
-  { key: 'age', dataKey: 'age', title: 'Age', width: 60, sortable: true, sortMethod: sortByNum, hidden: true },
-  { key: 'gender', dataKey: 'gender', title: 'gender', width: 80, filterable: true, filterSingle: true, filteredValue: '男', _group: 'Group 2' },
+  { key: 'code', dataKey: 'code', title: 'Code', width: 80, sortable: true, _group: 'Group 1' },
+  { key: 'name', dataKey: 'name', title: 'Name', width: 80, _group: 'Group 1' },
+  { key: 'age', dataKey: 'age', title: 'Age', width: 60, sortable: true, sortMethod: sortByNum },
+  { key: 'gender', dataKey: 'gender', title: 'Gender', width: 80, filterable: true, filterSingle: true, filteredValue: '男', _group: 'Group 2' },
   { key: 'city', dataKey: 'city', title: 'City', width: 80, sortable: true, filterable: true, _group: 'Group 2' },
   { key: 'tags', dataKey: 'tags', title: 'Tags', width: 300, filterable: true, filterMethod: generalArrFilterHandler },
 ])
@@ -103,7 +104,7 @@ const loading = ref(false)
 async function getData(total) {
   loading.value = true
   try {
-    const res = await getDataApi(total)
+    const res = await apiGetData(total)
     originData.value = res ?? []
 
     const tagsFilter = [...new Set(originData.value.flatMap(p => p.tags).filter(Boolean))]
@@ -116,29 +117,10 @@ async function getData(total) {
   } catch (error) {}
   loading.value = false
 }
-
-async function getDataApi(total) {
-  if (!total) total = Math.floor(Math.random() * 2000 + 1000)
-  await manualDelay(500)
-  return Array.from({ length: total }).map((_, idx) => {
-    return {
-      no: idx + 1,
-      code: Math.floor(Math.random() * 100000).toString(16),
-      name: Math.floor(Math.random() * 100000).toString(16),
-      age: Math.floor(Math.random() * 30 + 18),
-      gender: Math.random() > 0.5 ? '男' : '女',
-      city: ['北京', '上海', '深圳'][Math.floor(Math.random() * 3)],
-      tags: ['developer', 'Ph.D', 'Bachelor', 'Master', 'CEO', 'HRBP', 'HR']
-        .sort((a, b) => Math.random() - 0.5)
-        .slice(0, Math.floor(Math.random() * 4)),
-    }
-  })
-}
 </script>
 
 <template>
   <h3>el-table-v2 排序&筛选二次封装 demo</h3>
-  <span class="page-title">Statistics Table</span>
   <div class="page-content">
     <div style="margin-top: 10px; color: #333">
       <span>Total: {{ elTbv2CompRef?.tableData?.length ?? 0 }} / {{ originData.length }}</span>
@@ -153,10 +135,11 @@ async function getDataApi(total) {
       :handleCellRender="handleCellRender"
       :loading="loading"
       :tbHeight="tbHeight"
-      :initSort="{ key: 'age', order: 'desc' }"
+      :initSort="{ key: 'age', order: TableV2SortOrder.ASC }"
       :filters="filters"
       :row-height="40"
-      :scrollbar-always-on="true">
+      :scrollbar-always-on="true"
+    >
       <template #header="props">
         <CustomizedHeader v-bind="props" />
       </template>

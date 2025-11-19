@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, watch } from "vue";
 import { TableV2SortOrder } from 'element-plus'
+import { apiGetData } from "../api";
 
 onMounted(() => {
   getData(20);
@@ -11,40 +12,18 @@ const sortByStr = (a, b, prop) => a[prop].localeCompare(b[prop], "zh-CN");
 
 const originData = ref([]);
 const tableData = ref([]);
+
+/* eslint-disable */
+// prettier-ignore
 const columns = [
-  {
-    key: "no",
-    dataKey: "no",
-    title: "No.",
-    width: 60,
-    sortable: true,
-    sortMethod: sortByNum
-  },
-  { key: "code", dataKey: "code", title: "code", width: 80 },
-  { key: "name", dataKey: "name", title: "name", width: 80 },
-  {
-    key: "age",
-    dataKey: "age",
-    title: "Age",
-    width: 60,
-    sortable: true,
-    sortMethod: sortByNum
-  },
-  {
-    key: "gender",
-    dataKey: "gender",
-    title: "gender",
-    width: 80,
-    sortable: true
-  },
-  {
-    key: "city",
-    dataKey: "city",
-    title: "City",
-    width: 80,
-    sortable: true
-  }
+  { key: "no", dataKey: "no", title: "No.", width: 60, sortable: true, sortMethod: sortByNum },
+  { key: "code", dataKey: "code", title: "Code", width: 80 },
+  { key: "name", dataKey: "name", title: "Name", width: 80 },
+  { key: "age", dataKey: "age", title: "Age", width: 60, sortable: true, sortMethod: sortByNum },
+  { key: "gender", dataKey: "gender", title: "Gender", width: 80, sortable: true },
+  { key: "city", dataKey: "city", title: "City", width: 80, sortable: true }
 ];
+/* eslint-enable */
 
 // 排序状态，ref对象变量。对象的键、值分别对于排序项的key、排序值(asc/desc)
 const sortState = ref({
@@ -108,26 +87,9 @@ const clearSort = () => {
 };
 
 const getData = (total) => {
-  getDataApi(total).then((res) => {
+  apiGetData(total).then((res) => {
     originData.value = res ?? [];
     tableData.value = originData.value;
-  });
-};
-const getDataApi = (total) => {
-  if (!total) total = Math.floor(Math.random() * 2000 + 1000);
-  return new Promise((resolve, reject) => {
-    resolve(
-      Array.from({ length: total }).map((_, idx) => {
-        return {
-          no: idx + 1,
-          code: Math.floor(Math.random() * 100000).toString(16),
-          name: Math.floor(Math.random() * 100000).toString(16),
-          age: Math.floor(Math.random() * 30 + 18),
-          gender: Math.random() > 0.5 ? "男" : "女",
-          city: ["北京", "上海", "深圳"][Math.floor(Math.random() * 3)]
-        };
-      })
-    );
   });
 };
 </script>

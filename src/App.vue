@@ -8,6 +8,7 @@ import SortAndFilterView from '@/views/sort-and-filter.vue'
 import GroupHeaderOfficialView from '@/views/group-header-official.vue'
 import GroupHeaderView from '@/views/group-header.vue'
 import ReencapsulateView from '@/views/reencapsulate.vue'
+import SelectableView from '@/views/selectable.vue'
 
 const currNo = ref(1)
 const views = shallowRef([
@@ -19,6 +20,7 @@ const views = shallowRef([
   { no: 6, title: '表头分组(官方,多一级表头存放分组)', value: GroupHeaderOfficialView },
   { no: 7, title: '表头分组(非官方,不增加表头层级)', value: GroupHeaderView },
   { no: 8, title: 'TableV2二次封装(排序&筛选&表项操作)', value: ReencapsulateView },
+  { no: 9, title: 'TableV2二次封装(多选)', value: SelectableView },
 ])
 const currView = computed(() => views.value.find(v => v.no === currNo.value)?.value)
 

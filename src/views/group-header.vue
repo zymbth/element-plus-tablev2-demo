@@ -1,6 +1,7 @@
 <script setup lang="jsx">
 import { ref, onMounted, watch } from 'vue'
 import { TableV2SortOrder } from 'element-plus'
+import { apiGetData } from '../api'
 
 onMounted(() => {
   getData()
@@ -16,10 +17,10 @@ const tableData = ref([])
 // prettier-ignore
 const columns = [
   { key: 'no', dataKey: 'no', title: 'No.', width: 60, sortable: true, sortMethod: sortByNum },
-  { key: 'code', dataKey: 'code', title: 'code', width: 80, _group: 'Group 1' },
-  { key: 'name', dataKey: 'name', title: 'name', width: 80, _group: 'Group 1' },
+  { key: 'code', dataKey: 'code', title: 'Code', width: 80, _group: 'Group 1' },
+  { key: 'name', dataKey: 'name', title: 'Name', width: 80, _group: 'Group 1' },
   { key: 'age', dataKey: 'age', title: 'Age', width: 60, sortable: true, sortMethod: sortByNum, _group: 'Group 2' },
-  { key: 'gender', dataKey: 'gender', title: 'gender', width: 80, sortable: true, _group: 'Group 2' },
+  { key: 'gender', dataKey: 'gender', title: 'Gender', width: 80, sortable: true, _group: 'Group 2' },
   { key: 'city', dataKey: 'city', title: 'City', width: 80, sortable: true },
 ]
 /* eslint-enable */
@@ -79,26 +80,9 @@ const CustomizedHeader = ({ cells, columns, headerIndex }) => {
 }
 
 const getData = total => {
-  getDataApi(total).then(res => {
+  apiGetData(total).then(res => {
     originData.value = res ?? []
     tableData.value = originData.value
-  })
-}
-const getDataApi = total => {
-  if (!total) total = Math.floor(Math.random() * 2000 + 1000)
-  return new Promise((resolve, reject) => {
-    resolve(
-      Array.from({ length: total }).map((_, idx) => {
-        return {
-          no: idx + 1,
-          code: Math.floor(Math.random() * 100000).toString(16),
-          name: Math.floor(Math.random() * 100000).toString(16),
-          age: Math.floor(Math.random() * 30 + 18),
-          gender: Math.random() > 0.5 ? '男' : '女',
-          city: ['北京', '上海', '深圳'][Math.floor(Math.random() * 3)],
-        }
-      })
-    )
   })
 }
 </script>
