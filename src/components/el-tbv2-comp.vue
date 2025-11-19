@@ -59,8 +59,8 @@ const { originData, columnData } = toRefs(props)
 const wrapEl = ref() // 表格容器
 const wrapWidth = ref(0) // 表格容器宽度
 // 监听表格容器宽度变化，更新 wrapWidth
-const debounceUpdWrapWidth = debounce(width => (wrapWidth.value = width), 500)
-const handleTBWrapResize = ({ width }) => props.isFullWidth && width && debounceUpdWrapWidth(width)
+const debounceUpdWrapWidth = debounce(({ width }) => (wrapWidth.value = width), 500)
+const handleTBWrapResize = props.isFullWidth ? debounceUpdWrapWidth : () => {}
 
 // 默认单元格渲染方法
 const defaultCellRenderer = ({ cellData }) => cellData
