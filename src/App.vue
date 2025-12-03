@@ -9,6 +9,9 @@ import GroupHeaderOfficialView from '@/views/group-header-official.vue'
 import GroupHeaderView from '@/views/group-header.vue'
 import ReencapsulateView from '@/views/reencapsulate.vue'
 import SelectableView from '@/views/selectable.vue'
+import { useDark } from '@vueuse/core'
+
+useDark()
 
 const currNo = ref(1)
 const views = shallowRef([
@@ -49,10 +52,9 @@ const handleClick = no => (currNo.value = no)
   flex-wrap: wrap;
   gap: 0.5em 1em;
   .view {
-    color: #333;
     cursor: pointer;
     &.active {
-      color: var(--theme-color);
+      // color: var(--theme-color);
       cursor: default;
     }
   }
