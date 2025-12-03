@@ -1,6 +1,6 @@
 <script setup lang="jsx">
 import { TableV2SortOrder } from 'element-plus'
-import { computed, onMounted, reactive, readonly, ref, toRefs, watch } from 'vue'
+import { computed, nextTick, onMounted, reactive, readonly, ref, toRefs, watch } from 'vue'
 import { debounce, isArrElementsEqual, myTypeof } from '@/utils/common-methods'
 import {
   sortByChar,
@@ -73,7 +73,9 @@ const tempData = ref([]) // 中间变量，对源数据的筛选
 
 onMounted(() => {
   // 初始计算一次 wrapWidth
-  wrapWidth.value = wrapEl.value.offsetWidth
+  nextTick(() => {
+    wrapWidth.value = wrapEl.value.offsetWidth
+  })
   // 源数据更新 -> 更新筛选项各自的可筛选列表, 执行筛选
   watch(
     originData,
@@ -116,6 +118,18 @@ onMounted(() => {
     { immediate: true }
   )
 })
+
+// 表格项显隐状态
+const colHiddens = computed(() => {
+  return columnData.value.map(col => !!col.hidden)
+})
+
+// 表格最大宽度（isFullWidth=true时无视宽度限制）
+const maxTBWidth = computed(() =>
+  columnData.value.reduce((prev, curr) => {
+    return prev + ((!curr.hidden && curr.width) || 0)
+  }, 0)
+)
 
 /**
  * TableV2 所需的 columns
@@ -164,23 +178,6 @@ const columns = computed(() => {
     }
   })
 })
-
-// 表格项显隐状态
-const colHiddens = computed(() => {
-  return columnData.value.map(col => !!col.hidden)
-})
-
-// 控制col显隐后，调整表格宽度
-const maxTBWidth = ref(1000)
-watch(
-  colHiddens,
-  () => {
-    maxTBWidth.value = columns.value.reduce((prev, curr) => {
-      return prev + ((!curr.hidden && curr.width) || 0)
-    }, 0)
-  },
-  { immediate: true }
-)
 
 // 排序
 
