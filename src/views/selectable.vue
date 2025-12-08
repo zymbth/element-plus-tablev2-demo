@@ -1,5 +1,5 @@
 <script lang="jsx" setup>
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { sortByNum, getFilterListsByPropsFromObjArr } from '@/utils/el-table-v2-utils'
 import ElTbv2Comp from '@/components/el-tbv2-comp.vue'
 import { apiGetData } from '../api'
@@ -9,22 +9,22 @@ const tbHeight = ref(500) // 表格高度
 onMounted(() => {
   tbHeight.value = Math.max(window.innerHeight - 270, 500)
   getData()
-  watch(
-    () => elTbv2CompRef.value.tableData,
-    (val) => {
-      const len = val.length
-      indeterminate.value = len > 1 && val.some(p => !p._selected) && val.some(p => p._selected)
-      selectAll.value = len > 1 && val.every(p => p._selected)
-    }
-  )
 })
 
 const originData = ref([]) // 表格源数据
 
 const elTbv2CompRef = ref() // 表格对象
 
-const selectAll = ref(false)
-const indeterminate = ref(false)
+const selectAll = computed(() => {
+  const len = elTbv2CompRef.value?.tableData.length
+  return len > 0 && elTbv2CompRef.value.tableData.every(p => p._selected)
+})
+const indeterminate = computed(() => {
+  const len = elTbv2CompRef.value?.tableData.length
+  return len > 1
+    && elTbv2CompRef.value.tableData.some(p => !p._selected)
+    && elTbv2CompRef.value.tableData.some(p => p._selected)
+})
 
 /* eslint-disable */
 // prettier-ignore
@@ -67,20 +67,8 @@ const filters = reactive(
 
 const handleCellRender = ({ cellData, column: { dataKey }, rowData }) => {
   if (dataKey === 'selection') {
-    const onChange = v => {
-      if (!elTbv2CompRef.value?.tableData) return
-      // 半选
-      const len = elTbv2CompRef.value.tableData.length
-      indeterminate.value = len > 1
-        && (
-          v && elTbv2CompRef.value.tableData.some(p => !p._selected)
-          || !v && elTbv2CompRef.value.tableData.some(p => p._selected)
-        )
-      // 全选
-      selectAll.value = v && elTbv2CompRef.value.tableData.every(p => p._selected)
-    }
     return (
-      <ElCheckbox v-model={rowData._selected} onChange={onChange} label=" " />
+      <ElCheckbox v-model={rowData._selected} label=" " />
     )
   }
   if (dataKey === 'tags') {
