@@ -35,8 +35,9 @@ const columnData = ref([
     key: 'selection', dataKey: 'selection', title: ' ', width: 45, alwaysShow: true,
     headerCellRenderer: ({ column }) => {
       const onChange = v => {
-        const indexList = elTbv2CompRef.value?.tableData.map(p => originData.value.indexOf(p))
-        indexList.forEach(idx => originData.value[idx]._selected = v)
+        // const indexList = elTbv2CompRef.value?.tableData.map(p => originData.value.indexOf(p))
+        // indexList.forEach(idx => originData.value[idx]._selected = v)
+        elTbv2CompRef.value?.tableData.forEach(p => p._selected = v)
       }
       return (
         <ElCheckbox
