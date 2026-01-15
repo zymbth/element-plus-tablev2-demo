@@ -9,6 +9,7 @@ import GroupHeaderOfficialView from '@/views/group-header-official.vue'
 import GroupHeaderView from '@/views/group-header.vue'
 import ReencapsulateView from '@/views/reencapsulate.vue'
 import SelectableView from '@/views/selectable.vue'
+import NotesView from '@/views/notes.vue'
 import { useDark } from '@vueuse/core'
 
 useDark()
@@ -24,6 +25,7 @@ const views = shallowRef([
   { no: 7, title: '表头分组(非官方,不增加表头层级)', value: GroupHeaderView },
   { no: 8, title: 'TableV2二次封装(排序&筛选&表项操作)', value: ReencapsulateView },
   { no: 9, title: 'TableV2二次封装(多选)', value: SelectableView },
+  { no: 10, title: 'Notes', value: NotesView },
 ])
 const currView = computed(() => views.value.find(v => v.no === currNo.value)?.value)
 
